@@ -48,7 +48,8 @@ https://github.com/gitdagray/react_redux_toolkit
 - `nanoid` 는 uuid 대신에 rtk에서 제공하는 랜덤 아이디 생성 라이브러리.
 - `onSavePostClicked` 에서 사용되는 로직을 애초에 postsSlice.js에서 정의해서 재활용하는 것이 좋다.
   전
-  ```
+
+  ```jsx
   import { useState } from "react";
   import { useDispatch } from "react-redux";
   import { nanoid } from "@reduxjs/toolkit";
@@ -106,9 +107,10 @@ https://github.com/gitdagray/react_redux_toolkit
   };
 
   export default AddPostForm;
-
   ```
+
   후
+
   ```jsx
   import { useState } from "react";
   import { useDispatch } from "react-redux";
@@ -160,7 +162,9 @@ https://github.com/gitdagray/react_redux_toolkit
 
   export default AddPostForm;
   ```
+
   postsSlice.js
+
   ```jsx
   import { createSlice, nanoid } from "@reduxjs/toolkit";
 
@@ -204,6 +208,7 @@ https://github.com/gitdagray/react_redux_toolkit
 
   export default postsSlice.reducer;
   ```
+
 - date 쉽게 다루는 라이브러리 설치: `npm install date-fns`
   ```jsx
   date: sub(new Date(), { minutes: 10 }).toISOString(),
@@ -219,3 +224,24 @@ https://github.com/gitdagray/react_redux_toolkit
   const author = users.find((user) => user.id === userId);
   ```
 - 딕셔너리에 맵 돌려서 사용해보기
+  ```jsx
+  const ReactionButtons = ({ post }) => {
+    const dispatch = useDispatch();
+    const reactionButtons = Object.entries(reactionEmoji).map(
+      ([emojiName, emoji]) => {
+        return (
+          <button
+            key={emojiName}
+            type="button"
+            className="reactionButton"
+            onClick={() =>
+              dispatch(reactionAdded({ postId: post.id, reaction: emojiName }))
+            }
+          >
+            {emoji} {post.reactions[emojiName]}
+          </button>
+        );
+      }
+    );
+  ```
+  - `Object.entries()` 는 오브젝트를 인자로 받아서 enumerable 어레이로 전환해준다. [key, value] 형태로 나오기 때문에 map 문법을 적용할 때는 인자의 형식을 `[emojiName, emoji]` 로 지정해주자.
