@@ -1,247 +1,68 @@
-# redux toolkit tutorial
+## lesson 3
 
-# lesson 1
+### async redux - thunk
 
-## 참고자료
+- 비동기와 관련된 모든 활동들은 store.js 밖에서 일어나야 한다. 그래서 비동기 작업은 미들웨어를 사용하는데, thunk라고 한다. 프로그래밍에서 thunk는 딜레이된 작업의 코드를 의미한다.
+- `createAsyncThunk from ‘@reduxjs/toolkit’` , `axios from ‘axios`
+- 가끔은 슬라이스 리듀서는 리듀서로 정의되지 않는 액션에 대해 반응을 해야한다. async thunk로 api를 받아오는 것과 같은 경우다. `extraReducers(builder)` 에서 builder는 추가적인 케이스를 정의해주는 오브젝트다.
 
-[React Redux Full Course for Beginners | Redux Toolkit Complete Tutorial](https://www.youtube.com/watch?v=NqzdVN2tyvQ&list=PL0Zuz27SZ-6M1J5I1w2-uZx36Qp6qhjKo&t=86)
+### 개념 설명
 
-https://github.com/gitdagray/react_redux_toolkit
+- **dispatch**는 actions를 store에 등록된 reducer functions에게 전달한다. reducer functions의 action type에 따라 state의 로직과 값이 변경이 된다.
+- **actions**는 state를 변경할 목적으로 설계된 자바스크립트 오브젝트다. actions는 type 속성이 반드시 존재하고, 어떤 작업을 수행하는지 유형을 나타낸다. payload 속성은 자료나 데이터를 담는다. **action creator**는 action 오브젝트를 생성하고 리턴하는 함수다.
+- **store**는 리덕스 프로젝트에서 스테이트를 관리하는 중앙 레포지토리다. actions를 전송하거나, 현재 state값을 가져오거나, 변경사항을 구독한다.
 
-## 설치
+### 구조설명
 
-- npm install @reduxjs/toolkit react-redux
-- redux dev tools 크롬 익스텐션 설치하기
+- 서버를 실행하면 제일 먼저 main.jsx에서 store.dispatch(fetchUsers());를 실행한다. 이 함수는 api서버에서 유저들의 정보를 가져온다. api호출은 비동기적으로 작동해야 한다. fetchUsers()는 asynchronous thunk action function이면서 action creator다. redux는 async actions를 지원하지 않는다. 그래서 미들웨어인 redux thunk를 사용한다. redux thunk는 action이 아닌 함수를 리턴하는 action creator를 사용할 수 있게 해준다. thunk는 action를 dispatch할 때 딜레이가 가능하고, 특정한 조건이 맞을 때만 dispatch를 한다.
+- store.dispatch()와 useDispatch()는 같은 기능을 수행한다. action를 store에 전달하고, 이 action은 reducer functions에게 연달아 전달된다. 두 함수는 같은 기능을 수행하지만, 사용하는 위치에 따라 다르게 사용이 된다. 리액트 컴포넌트가 아닌 파일에서나 리액트 컴포넌트이지만 세팅과 관련된 기능은 store.dispatch()를 사용한다. 리액트는 useDispatch()를 이용하는 것을 권장한다. 이 함수는 리액트 컴포넌트에서만 사용이 가능하다.
+- features/posts/postSlice.js는 글을 포스트하는 것과 관련된 기능들 중에 redux함수들을 관리하는 파일이다. 이 곳에서의 비동기 작업은 post api를 가져오는 것과 그 데이터로 글을 쓸 수 있도록 데이터 전처리 작업을 수행한다.
+- 비동기 작업을 시행하는 함수는 이전과 다르게 reducers안에서 정의되지 않고 슬라이스(createSlice) 밖에서 정의가 되어야 한다. 그리고 extrareducers(builder) 속성을 이용해서 정의하기 때문에, reducers와 reducers 관련된 여러 함수들과 구분이 된다. 비동기 함수의 리듀서 작업은 addCase로 다뤄진다는 것을 기억하자.
+  - 비동기 함수
+    ```jsx
+    export const fetchPosts = createAsyncThunk("posts/fetchPosts", async () => {
+      const response = await axios.get(POSTS_URL);
+      return response.data;
+    });
 
-## vite 사용할 때 jsx 의존성 문제
-
-> [vite] Internal server error: Failed to parse source for import analysis because the content contains invalid JS syntax. If you are using JSX, make sure to name the file with the .jsx or .tsx extension.
-
-- jsx 문법을 사용하고 있으면 반드시 파일의 확장자명을 `.jsx`로 지어주자. `.js` 에서 jsx문법을 사용할 수 없다.
-
-# lesson 2
-
-## rtk 구조 설계 및 디테일
-
-### 구조
-
-- posts 디렉토리
-  - postsSlice.js는 posts디렉토리에서 사용하고 있는 스테이트를 관리한다.
-  - initialState에 포스트 형태를 지정하고, 디폴트로 2개를 미리 생성한다.
-  - 리듀서는 새로운 포스트를 만드는 경우와 이모지 클릭수 업데이트가 있다. 나머지 스테이트 각 컴포넌트에서만 사용한다.
-  - 포스트와 관련된 기능들을 최대한 다 컴포넌트로 구분해서 구현한다.
-    - 새로운 포스트를 추가하기
-    - 모든 포스트를 리스트로 보여주기와 구성요소
-      - 제목과 컨텐츠
-      - 작성자
-      - 이모지
-      - 타임스탬프
-- users 디렉토리
-  - 이용자를 찾는 기능은 users 디렉토리를 따로 만들어서 관리한다. `selectAllusers` 로 모든 유저들을 찾아볼 수 있다.
-
-### 디테일
-
-- `postsSlice.actions`는 자동적으로 생성이 되기 때문에 상세한 코드를 파일안에서 찾아볼 수가 없다. export 하는 건 사실 action creater function를 익스포팅하고 이 함수가 actions를 생성한다.
-- `selectAllPosts` 는 이 함수가 사용이 되는 곳에서 나중에 수정이 되면 여러 컴포넌트들을 수정해야 하니, 차라리 슬라이스에서 관리한다.
-- 리액트는 스테이트를 직접 수정하면 안된다. 그래서 리액트 툴킷은 immer.js를 내부적으로 사용하고 있다. immer.js는 스테이트를 수정하는 것이 아니라 새로운 스테이트를 생성하고 그 값을 반환한다. 오직 `createSlice()` 함수 안의 `state.push()` 를 이용해서 스테이트의 값을 수정한 것처럼 보이게 할 수 있다. 이외에 다른 곳에서는 원래 하던 방식대로 `useState()`를 사용한다. https://immerjs.github.io/immer/
-- `useState()` 를 사용하는 경우는 오직 하나의 컴포넌트안에서만 이용을 할 때이다. 글로벌 스테이트는 rtk로 관리를 하자.
-- `nanoid` 는 uuid 대신에 rtk에서 제공하는 랜덤 아이디 생성 라이브러리.
-- `onSavePostClicked` 에서 사용되는 로직을 애초에 postsSlice.js에서 정의해서 재활용하는 것이 좋다.
-  전
-
-  ```jsx
-  import { useState } from "react";
-  import { useDispatch } from "react-redux";
-  import { nanoid } from "@reduxjs/toolkit";
-
-  import { postAdded } from "./postsSlice";
-
-  const AddPostForm = () => {
-    const dispatch = useDispatch();
-    const [title, setTitle] = useState("");
-    const [content, setContent] = useState("");
-
-    const onTitleChanged = (e) => setTitle(e.target.value);
-    const onContentChanged = (e) => setContent(e.target.value);
-
-    const onSavePostClicked = () => {
-      if (title && content) {
-        dispatch(
-          postAdded({
-            id: nanoid(),
-            title,
-            content,
+    export const addNewPost = createAsyncThunk(
+      "posts/addNewPost",
+      async (initialPost) => {
+        const response = await axios.post(POSTS_URL, initialPost);
+        return response.data;
+      }
+    );
+    ```
+  - builder.addCase() 예시
+    ```jsx
+    extraReducers(builder) {
+        builder
+          .addCase(fetchPosts.pending, (state) => {
+            state.status = "loading";
           })
-        );
-
-        setTitle("");
-        setContent("");
-      }
-    };
-
-    return (
-      <section>
-        <h2>add a new post</h2>
-        <form>
-          <label htmlFor="postTitle">post title:</label>
-          <input
-            type="text"
-            name="postTitle"
-            id="postTitle"
-            value={title}
-            onChange={onTitleChanged}
-          />
-          <label htmlFor="postContent">content :</label>
-          <textarea
-            name="postConetent"
-            id="postContent"
-            onChange={onContentChanged}
-            value={content}
-          />
-          <button type="button" onClick={onSavePostClicked}>
-            save post
-          </button>
-        </form>
-      </section>
-    );
-  };
-
-  export default AddPostForm;
-  ```
-
-  후
-
-  ```jsx
-  import { useState } from "react";
-  import { useDispatch } from "react-redux";
-  import { postAdded } from "./postsSlice";
-
-  const AddPostForm = () => {
-    const dispatch = useDispatch();
-    const [title, setTitle] = useState("");
-    const [content, setContent] = useState("");
-
-    const onTitleChanged = (e) => setTitle(e.target.value);
-    const onContentChanged = (e) => setContent(e.target.value);
-
-    const onSavePostClicked = () => {
-      if (title && content) {
-        dispatch(postAdded(title, content));
-
-        setTitle("");
-        setContent("");
-      }
-    };
-
-    return (
-      <section>
-        <h2>add a new post</h2>
-        <form>
-          <label htmlFor="postTitle">post title:</label>
-          <input
-            type="text"
-            name="postTitle"
-            id="postTitle"
-            value={title}
-            onChange={onTitleChanged}
-          />
-          <label htmlFor="postContent">content :</label>
-          <textarea
-            name="postConetent"
-            id="postContent"
-            onChange={onContentChanged}
-            value={content}
-          />
-          <button type="button" onClick={onSavePostClicked}>
-            save post
-          </button>
-        </form>
-      </section>
-    );
-  };
-
-  export default AddPostForm;
-  ```
-
-  postsSlice.js
-
-  ```jsx
-  import { createSlice, nanoid } from "@reduxjs/toolkit";
-
-  const initialState = [
-    {
-      id: "1",
-      title: "learning redux toolkit",
-      content: "i've heard good things.",
-    },
-    {
-      id: "2",
-      title: "slices...",
-      content: "the more i say slice, the more i want pizza",
-    },
-  ];
-
-  const postsSlice = createSlice({
-    name: "posts",
-    initialState,
-    reducers: {
-      postAdded: {
-        reducer(state, action) {
-          state.push(action.payload);
-        },
-        prepare(title, content) {
-          return {
-            payload: {
-              id: nanoid(),
-              title,
-              content,
-            },
-          };
-        },
-      },
-    },
-  });
-
-  export const selectAllPosts = (state) => state.posts;
-
-  export const { postAdded } = postsSlice.actions;
-
-  export default postsSlice.reducer;
-  ```
-
-- date 쉽게 다루는 라이브러리 설치: `npm install date-fns`
-  ```jsx
-  date: sub(new Date(), { minutes: 10 }).toISOString(),
-  ```
-- 블로그 포스트를 최신 순서대로 정렬
-  ```jsx
-  const orderedPosts = posts
-    .slice()
-    .sort((a, b) => b.date.localeCompare(a.date));
-  ```
-- 여러 글쓴이 리스트에서 특정한 글쓴이 찾기
-  ```jsx
-  const author = users.find((user) => user.id === userId);
-  ```
-- 딕셔너리에 맵 돌려서 사용해보기
-  ```jsx
-  const ReactionButtons = ({ post }) => {
-    const dispatch = useDispatch();
-    const reactionButtons = Object.entries(reactionEmoji).map(
-      ([emojiName, emoji]) => {
-        return (
-          <button
-            key={emojiName}
-            type="button"
-            className="reactionButton"
-            onClick={() =>
-              dispatch(reactionAdded({ postId: post.id, reaction: emojiName }))
-            }
-          >
-            {emoji} {post.reactions[emojiName]}
-          </button>
-        );
-      }
-    );
-  ```
-  - `Object.entries()` 는 오브젝트를 인자로 받아서 enumerable 어레이로 전환해준다. [key, value] 형태로 나오기 때문에 map 문법을 적용할 때는 인자의 형식을 `[emojiName, emoji]` 로 지정해주자.
+          .addCase(fetchPosts.fulfilled, (state, action) => {
+            state.status = "succeeded";
+            let min = 1;
+            const loadedPosts = action.payload.map((post) => {
+              post.id = nanoid();
+              post.date = sub(new Date(), { minutes: min++ }).toISOString();
+              post.reactions = {
+                thumbsUp: 0,
+                wow: 0,
+                heart: 0,
+                rocket: 0,
+                coffee: 0,
+              };
+              return post;
+            });
+            state.posts = state.posts.concat(loadedPosts);
+          })
+    ```
+- initialState에 posts배열과 status, error를 생성했다. 이 스테이트들은 나중에 호출해서 사용이 되거나 변경할 수 있도록 꼭 코드 하단에 export시켜야 한다.
+  - state.posts.posts?
+    - posts의 posts로 정의하는 이유는 store에 등록된 포스트 리듀서가 posts이기 때문이다.
+    ```jsx
+    export const selectAllPosts = (state) => state.posts.posts;
+    export const getPostsStatus = (state) => state.posts.status;
+    export const getPostsError = (state) => state.posts.error;
+    ```
