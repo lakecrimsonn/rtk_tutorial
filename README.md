@@ -1,68 +1,73 @@
-## lesson 3
+## lesson 4
 
-### async redux - thunk
+### 멀티 페이지 블로그 만들기
 
-- 비동기와 관련된 모든 활동들은 store.js 밖에서 일어나야 한다. 그래서 비동기 작업은 미들웨어를 사용하는데, thunk라고 한다. 프로그래밍에서 thunk는 딜레이된 작업의 코드를 의미한다.
-- `createAsyncThunk from ‘@reduxjs/toolkit’` , `axios from ‘axios`
-- 가끔은 슬라이스 리듀서는 리듀서로 정의되지 않는 액션에 대해 반응을 해야한다. async thunk로 api를 받아오는 것과 같은 경우다. `extraReducers(builder)` 에서 builder는 추가적인 케이스를 정의해주는 오브젝트다.
+- npm i react-router-dom
 
-### 개념 설명
+### router 구조
 
-- **dispatch**는 actions를 store에 등록된 reducer functions에게 전달한다. reducer functions의 action type에 따라 state의 로직과 값이 변경이 된다.
-- **actions**는 state를 변경할 목적으로 설계된 자바스크립트 오브젝트다. actions는 type 속성이 반드시 존재하고, 어떤 작업을 수행하는지 유형을 나타낸다. payload 속성은 자료나 데이터를 담는다. **action creator**는 action 오브젝트를 생성하고 리턴하는 함수다.
-- **store**는 리덕스 프로젝트에서 스테이트를 관리하는 중앙 레포지토리다. actions를 전송하거나, 현재 state값을 가져오거나, 변경사항을 구독한다.
+- main.jsx
+  - Router
+    - Routes
+      - Route path =”/\*” element={<App/>} >
+- App.jsx
+  - Route path=”/” Layout
+    - index <PostList />
+    - Route path=”post”
+      - index <AddPostForm />
+        - Route path=”:postId” <SinglePostPage />
+        - Route path=”edit/:postId” <EditPostForm />
+  - index는 해당 도메인위치로 이동할 경우 첫 페이지를 의미함.
+  - 예시로 도메인이 www.ex.ple이라면 첫 페이지는 <PostList/>
+  - www.ex.ple/post의 첫 페이지는 <AddPostForm/>
+  - www.ex.ple/post/{postid} → <SinglePostPage/>
+  - www.ex.ple/post/edit/{postid} → <EditPostForm/>
+- component/Layout.jsx
+  - <Header />
+  - <main><Outlet /></main>
+  - Layout은 항상 어느 페이지로 이동하든 정적으로 계속 존재하는 요소들을 정할 수 있음. header, footer, outlet. Outlet에 이동하는 페이지가 보여질 예정. Route안에 Route가 nested되어 있기 때문에 그렇다.
+- component/Header.jsx
+  - Link는 client side routing을 가능하게 함. 일반적인 link를 사용하면 서버로 페이지 요청을 하지만, react router dom이 Link로 하여금 클라이언트 안에서 페이지 라우팅이 가능하게 한다.
 
-### 구조설명
+### unwrap()
 
-- 서버를 실행하면 제일 먼저 main.jsx에서 store.dispatch(fetchUsers());를 실행한다. 이 함수는 api서버에서 유저들의 정보를 가져온다. api호출은 비동기적으로 작동해야 한다. fetchUsers()는 asynchronous thunk action function이면서 action creator다. redux는 async actions를 지원하지 않는다. 그래서 미들웨어인 redux thunk를 사용한다. redux thunk는 action이 아닌 함수를 리턴하는 action creator를 사용할 수 있게 해준다. thunk는 action를 dispatch할 때 딜레이가 가능하고, 특정한 조건이 맞을 때만 dispatch를 한다.
-- store.dispatch()와 useDispatch()는 같은 기능을 수행한다. action를 store에 전달하고, 이 action은 reducer functions에게 연달아 전달된다. 두 함수는 같은 기능을 수행하지만, 사용하는 위치에 따라 다르게 사용이 된다. 리액트 컴포넌트가 아닌 파일에서나 리액트 컴포넌트이지만 세팅과 관련된 기능은 store.dispatch()를 사용한다. 리액트는 useDispatch()를 이용하는 것을 권장한다. 이 함수는 리액트 컴포넌트에서만 사용이 가능하다.
-- features/posts/postSlice.js는 글을 포스트하는 것과 관련된 기능들 중에 redux함수들을 관리하는 파일이다. 이 곳에서의 비동기 작업은 post api를 가져오는 것과 그 데이터로 글을 쓸 수 있도록 데이터 전처리 작업을 수행한다.
-- 비동기 작업을 시행하는 함수는 이전과 다르게 reducers안에서 정의되지 않고 슬라이스(createSlice) 밖에서 정의가 되어야 한다. 그리고 extrareducers(builder) 속성을 이용해서 정의하기 때문에, reducers와 reducers 관련된 여러 함수들과 구분이 된다. 비동기 함수의 리듀서 작업은 addCase로 다뤄진다는 것을 기억하자.
-  - 비동기 함수
+- 언랩은 api호출과 같은 비동기작업이 리턴하는 프로미스를 편하게 처리하는 함수다. dispatch 처리 다음에 발동하는 함수인데, action을 dispatch하고 난 뒤에 리턴되는 프로미스를 언랩한다. dispatch된 action이 fulfilled였으면 action의 payload을 담고 있는 새로운 프로미스를 리턴한다. rejected된다면 에러 오브젝트를 리턴한다.
+- 프로미스가 성공적으로 해결되면 then() 으로 그 다음 작업을 처리할 수 있다. 만약에 reject된다면, catch()로 에러 스테이트나 메세지를 확인할 수 있다.
+  - 예시
     ```jsx
-    export const fetchPosts = createAsyncThunk("posts/fetchPosts", async () => {
-      const response = await axios.get(POSTS_URL);
-      return response.data;
-    });
-
-    export const addNewPost = createAsyncThunk(
-      "posts/addNewPost",
-      async (initialPost) => {
-        const response = await axios.post(POSTS_URL, initialPost);
-        return response.data;
-      }
-    );
+    dispatch(
+      updatePost({
+        id: post.id,
+        title,
+        body: content,
+        userId,
+        reactions: post.reactions,
+      })
+    )
+      .unwrap()
+      .then((updatedPost) => {
+        // Handle success
+        console.log("Post updated successfully:", updatedPost);
+        // You can perform more actions here, such as redirecting the user
+        // or updating the state to indicate the successful update.
+      })
+      .catch((error) => {
+        // Handle error
+        console.error("Failed to update the post:", error);
+        // Here, you could update your application's state to indicate the error,
+        // show an error message to the user, or perform other error handling actions.
+      });
     ```
-  - builder.addCase() 예시
+- unwrap()만 쓰인 구조라면 에러 오브젝트를 받는 용도로 사용이 되었다는 말이다.
+  - 예시
     ```jsx
-    extraReducers(builder) {
-        builder
-          .addCase(fetchPosts.pending, (state) => {
-            state.status = "loading";
-          })
-          .addCase(fetchPosts.fulfilled, (state, action) => {
-            state.status = "succeeded";
-            let min = 1;
-            const loadedPosts = action.payload.map((post) => {
-              post.id = nanoid();
-              post.date = sub(new Date(), { minutes: min++ }).toISOString();
-              post.reactions = {
-                thumbsUp: 0,
-                wow: 0,
-                heart: 0,
-                rocket: 0,
-                coffee: 0,
-              };
-              return post;
-            });
-            state.posts = state.posts.concat(loadedPosts);
-          })
-    ```
-- initialState에 posts배열과 status, error를 생성했다. 이 스테이트들은 나중에 호출해서 사용이 되거나 변경할 수 있도록 꼭 코드 하단에 export시켜야 한다.
-  - state.posts.posts?
-    - posts의 posts로 정의하는 이유는 store에 등록된 포스트 리듀서가 posts이기 때문이다.
-    ```jsx
-    export const selectAllPosts = (state) => state.posts.posts;
-    export const getPostsStatus = (state) => state.posts.status;
-    export const getPostsError = (state) => state.posts.error;
+    dispatch(
+      updatePost({
+        id: post.id,
+        title,
+        body: content,
+        userId,
+        reactions: post.reactions,
+      })
+    ).unwrap();
     ```
