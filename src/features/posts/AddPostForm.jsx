@@ -1,10 +1,14 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+
 import { addNewPost } from "./postsSlice";
 import { selectAllUsers } from "../users/usersSlice";
+import { useNavigate } from "react-router-dom";
 
 const AddPostForm = () => {
   const dispatch = useDispatch();
+
+  const navigate = useNavigate();
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -25,11 +29,13 @@ const AddPostForm = () => {
       try {
         setAddRequestStatus("pending");
         dispatch(addNewPost({ title, body: content, userId })).unwrap();
+
         setTitle("");
         setContent("");
         setUserId("");
+        navigate("/");
       } catch (err) {
-        console.error("failed to save the post", err);
+        console.error("Failed to save the post", err);
       } finally {
         setAddRequestStatus("idle");
       }
@@ -37,43 +43,40 @@ const AddPostForm = () => {
   };
 
   const usersOptions = users.map((user) => (
-    <option value={user.id} key={user.id}>
+    <option key={user.id} value={user.id}>
       {user.name}
     </option>
   ));
 
   return (
     <section>
-      <h2>add a new post</h2>
+      <h2>Add a New Post</h2>
       <form>
-        <label htmlFor="postTitle">post title:</label>
+        <label htmlFor="postTitle">Post Title:</label>
         <input
           type="text"
-          name="postTitle"
           id="postTitle"
+          name="postTitle"
           value={title}
           onChange={onTitleChanged}
         />
-
-        <label htmlFor="postAuthor">author:</label>
-        <select value={userId} id="postAuthor" onChange={onAuthorChanged}>
+        <label htmlFor="postAuthor">Author:</label>
+        <select id="postAuthor" value={userId} onChange={onAuthorChanged}>
           <option value=""></option>
           {usersOptions}
         </select>
-
-        <label htmlFor="postContent">content :</label>
+        <label htmlFor="postContent">Content:</label>
         <textarea
-          name="postConetent"
           id="postContent"
-          onChange={onContentChanged}
+          name="postContent"
           value={content}
+          onChange={onContentChanged}
         />
         <button type="button" onClick={onSavePostClicked} disabled={!canSave}>
-          save post
+          Save Post
         </button>
       </form>
     </section>
   );
 };
-
 export default AddPostForm;
