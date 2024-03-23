@@ -4,7 +4,12 @@ import ReactionButtons from "./ReactionButtons";
 import { PropTypes } from "prop-types";
 import { Link } from "react-router-dom";
 
-const PostsExcerpt = ({ post }) => {
+import { useSelector } from "react-redux";
+import { selectPostById } from "./postsSlice";
+
+const PostsExcerpt = ({ postId }) => {
+  const post = useSelector((state) => selectPostById(state, postId));
+
   return (
     <article>
       <h2>{post.title}</h2>
@@ -20,13 +25,7 @@ const PostsExcerpt = ({ post }) => {
 };
 
 PostsExcerpt.propTypes = {
-  post: PropTypes.shape({
-    id: PropTypes.number,
-    title: PropTypes.string,
-    body: PropTypes.string,
-    userId: PropTypes.number,
-    date: PropTypes.string,
-  }),
+  postId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
 };
 
 export default PostsExcerpt;
